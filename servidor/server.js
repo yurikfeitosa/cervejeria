@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 💾 CONEXÃO COM O CLOUD FIRESTORE
+// CONEXÃO COM O CLOUD FIRESTORE
 const serviceAccount = require('./firebase-key.json');
 
 admin.initializeApp({
@@ -15,18 +15,18 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-// 🍺 FUNÇÃO SEED: Cadastra o catálogo de cervejas automaticamente se estiver vazio
+// FUNÇÃO SEED: Cadastra o catálogo de cervejas automaticamente se estiver vazio
 const inicializarCatalogoCervejas = async () => {
   try {
     const produtosSnapshot = await db.collection('produtos').get();
     
     // Se já existirem produtos cadastrados, não faz nada
     if (!produtosSnapshot.empty) {
-      console.log('📦 Catálogo de cervejas já existente no Firestore.');
+      console.log('Catálogo de cervejas já existente no Firestore.');
       return;
     }
 
-    console.log('🌱 Alimentando o Firestore com o catálogo inicial de cervejas...');
+    console.log(' Alimentando o Firestore com o catálogo inicial de cervejas...');
     const batch = db.batch();
 
     const cervejasNoProjeto = [
@@ -47,9 +47,9 @@ const inicializarCatalogoCervejas = async () => {
   }
 };
 
-// =========================================================================
+
 // ROTA GET: Buscar a lista de produtos (cervejas) para o Select do Front-end
-// =========================================================================
+
 app.get('/api/produtos', async (req, res) => {
   try {
     const produtosSnapshot = await db.collection('produtos').get();
@@ -63,9 +63,9 @@ app.get('/api/produtos', async (req, res) => {
   }
 });
 
-// =========================================================================
+
 // ROTA POST ATUALIZADA: Grava o Pedido associando o Vendedor responsável
-// =========================================================================
+
 app.post('/api/pedidos', async (req, res) => {
   try {
     const { cliente, email, itens, vendedor } = req.body; // 🌟 Recebe 'itens' em vez de um único produtoId
@@ -81,7 +81,7 @@ app.post('/api/pedidos', async (req, res) => {
     // Salva o cliente
     batch.set(clienteRef, { nome: cliente, email: email });
 
-    // 🌟 Estrutura o documento do pedido contendo a lista completa de compras
+    // Estrutura o documento do pedido contendo a lista completa de compras
     batch.set(pedidoRef, {
       clienteId: clienteRef.id,
       vendedor: vendedor || "Venda Direta Site",
@@ -98,12 +98,11 @@ app.post('/api/pedidos', async (req, res) => {
   }
 });
 
-// =========================================================================
 // ROTA GET: Relatório Gerencial (Mantém o mesmo JOIN inteligente anterior)
-// =========================================================================
+
 app.get('/api/pedidos', async (req, res) => {
   try {
-    const { email } = req.query; // 🌟 Captura o e-mail enviado pelo front-end
+    const { email } = req.query; // Captura o e-mail enviado pelo front-end
 
     // Busca as coleções básicas de clientes e produtos para o JOIN
     const [clientesSnapshot, produtosSnapshot] = await Promise.all([
@@ -114,7 +113,7 @@ app.get('/api/pedidos', async (req, res) => {
     const clientesLista = clientesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     const produtosLista = produtosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    // 🌟 DEFINIÇÃO DA BUSCA DE PEDIDOS COM FILTRO DINÂMICO
+    // DEFINIÇÃO DA BUSCA DE PEDIDOS COM FILTRO DINÂMICO
     let pedidosRef = db.collection('pedidos');
     let pedidosSnapshot;
 
@@ -174,10 +173,8 @@ app.get('/api/pedidos', async (req, res) => {
   }
 });
 
-
-// =========================================================================
 // ROTA PUT: Atualiza os dados do cliente (Edição) ou o Status do Pedido
-// =========================================================================
+
 app.put('/api/pedidos/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -203,7 +200,7 @@ app.put('/api/pedidos/:id', async (req, res) => {
       batch.update(clienteRef, dadosAtualizacaoCliente);
     }
 
-    // 2. 🌟 Atualização da cerveja selecionada e quantidade dentro do Pedido
+    // 2. Atualização da cerveja selecionada e quantidade dentro do Pedido
     if (novosItens && Array.isArray(novosItens)) {
       batch.update(pedidoRef, { itens: novosItens });
     }
@@ -221,9 +218,8 @@ app.put('/api/pedidos/:id', async (req, res) => {
   }
 });
 
-// =========================================================================
 // ROTA DELETE: Remove o Pedido e limpa o Cliente vinculado no Firestore
-// =========================================================================
+
 app.delete('/api/pedidos/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -255,9 +251,7 @@ app.delete('/api/pedidos/:id', async (req, res) => {
   }
 });
 
-// =======================================================
-// 🍺 CRUD DE PRODUTOS (CATÁLOGO DE CERVEJAS) NO FIRESTORE
-// =======================================================
+// CRUD DE PRODUTOS (CATÁLOGO DE CERVEJAS) NO FIRESTORE
 
 // 1. CREATE: Recebe a cerveja do React e salva na coleção 'produtos'
 app.post('/api/produtos', async (req, res) => {
@@ -332,6 +326,6 @@ app.delete('/api/produtos/:id', async (req, res) => {
 
 const PORT = 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  inicializarCatalogoCervejas(); // 🔥 Roda a semente assim que o servidor liga
+  console.log(`Servidor rodando na porta ${PORT}`);
+  inicializarCatalogoCervejas(); //  Roda a semente assim que o servidor liga
 });

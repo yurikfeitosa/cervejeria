@@ -13,14 +13,14 @@ export default function Pedidos() {
     listarPedidos();
   }, []);
 
-  // 📝 READ: Busca os dados unificados da API
+  //  READ: Busca os dados unificados da API
   const listarPedidos = async () => {
   setCarregando(true);
   try {
-    // 🌟 CAPTURA O EMAIL DO CLIENTE LOGADO
+    //  CAPTURA O EMAIL DO CLIENTE LOGADO
     const emailUsuarioLogado = auth.currentUser ? auth.currentUser.email : "";
 
-    // 🌟 PASSA O EMAIL NA URL COMO QUERY PARAMETER (?email=...)
+    //  PASSA O EMAIL NA URL COMO QUERY PARAMETER (?email=...)
     const resPedidos = await fetch(`http://localhost:5000/api/pedidos?email=${emailUsuarioLogado}`);
     const resProdutos = await fetch('http://localhost:5000/api/produtos');
     
@@ -35,7 +35,7 @@ export default function Pedidos() {
   }
 };
 
-  // 💾 UPDATE: Envia as alterações do subcomponente AlterarPedidos para a API
+  // UPDATE: Envia as alterações do subcomponente AlterarPedidos para a API
   const executarAlteracao = async (id, clienteNome, clienteEmail, novosItens) => {
     try {
       const resposta = await fetch(`http://localhost:5000/api/pedidos/${id}`, {
@@ -53,7 +53,7 @@ export default function Pedidos() {
     }
   };
 
-  // 🗑️ DELETE: Acionado pelo subcomponente ExcluirPedidos
+  //  DELETE: Acionado pelo subcomponente ExcluirPedidos
   const executarExclusao = async (id) => {
     try {
       const resposta = await fetch(`http://localhost:5000/api/pedidos/${id}`, { method: 'DELETE' });

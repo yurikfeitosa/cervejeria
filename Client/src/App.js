@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Pedidos from './Pedidos/Pedidos';
-// 🌟 ADICIONE ESSES IMPORTS NO TOPO DO SEU App.js:
-import Produtos from './Produtos/Produtos'; // Ou o caminho correto onde está sua página de produtos
-import Perfil from './Clientes/Perfil';     // Ou o caminho correto onde está sua página de perfil
+import Produtos from './Produtos/Produtos';
+import Perfil from './Clientes/Perfil'; 
 
 // Importando suas páginas institucionais
 import Inicio from './Paginas/inicio';
@@ -33,7 +32,7 @@ export default function App() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [carregandoSessao, setCarregandoSessao] = useState(true);
 
-  // 🔄 CONTROLE DE SESSÃO REAL: Verifica se o token de login já existe ao atualizar a página (F5)
+  // CONTROLE DE SESSÃO REAL: Verifica se o token de login já existe ao atualizar a página (F5)
   useEffect(() => {
     const monitorarSessao = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -46,7 +45,7 @@ export default function App() {
     return () => monitorarSessao();
   }, []);
 
-  // 🔐 FUNÇÃO: Efetuar Login Real no Firebase
+  // FUNÇÃO: Efetuar Login Real no Firebase
   const efetuarrLogin = async (email, senate) => {
     if (!email.trim() || !senate.trim()) {
       alert('Por favor, preencha todos os campos do login!');
@@ -63,7 +62,7 @@ export default function App() {
     }
   };
 
-  // 📝 FUNÇÃO: Cadastrar Novo Usuário Administrativo no Firebase Auth
+  // FUNÇÃO: Cadastrar Novo Usuário Administrativo no Firebase Auth
   const cadastrarNovoUsuario = async (email, senate, confirmarSenha) => {
     if (!email.trim() || !senate.trim() || !confirmarSenha.trim()) {
       alert("Por favor, preencha todos os campos do cadastro!");
@@ -96,7 +95,7 @@ export default function App() {
     }
   };
 
-  // 🚪 FUNÇÃO: Efetuar Logout Real
+  // FUNÇÃO: Efetuar Logout Real
   const efetuarLogout = async () => {
     try {
       await signOut(auth);
@@ -107,7 +106,7 @@ export default function App() {
     }
   };
 
-  // 🛡️ FUNÇÃO AUXILIAR: Proteção de Telas e Bloqueios (Critério Crítico da Apresentação)
+  // FUNÇÃO AUXILIAR: Proteção de Telas e Bloqueios (Critério Crítico da Apresentação)
   const navegarPara = (destino) => {
     const telasRestritas = ['adquiraasua', 'clientes', 'produtos', 'pedidos'];
     
@@ -155,7 +154,7 @@ export default function App() {
   if (carregandoSessao) {
     return (
       <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#0F0F0F', color: '#ff9f1c', fontFamily: 'sans-serif', fontWeight: 'bold' }}>
-        🚀 Autenticando com a base Mars...
+         Autenticando com a base Mars...
       </div>
     );
   }

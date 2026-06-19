@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Alata&family=Bebas+Neue&family=Comfortaa&family=Poppins:wght@300;400;500;600&family=Quicksand&display=swap');
 
 /* =========================================================================
-   ✨ ANIMAÇÕES ORIGINAIS (MANTIDAS)
+    ANIMAÇÕES ORIGINAIS (MANTIDAS)
    ========================================================================= */
 @keyframes container {
     from { top: -800px; opacity: 0%; }
@@ -413,6 +413,7 @@ form label {
     font-size: 1.2em;
     background: linear-gradient(316.12deg, #FFA800 59.23%, #FF2525 116.27%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

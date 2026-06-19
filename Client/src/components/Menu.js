@@ -47,7 +47,7 @@ export default function Menu({ usuarioLogado, onLogout, onNavegar, telaAtiva }) 
             </a>
           ) : (
             <>
-              {/* 🌟 NOVAS ABAS ADICIONADAS: Seguindo o padrão de estilo idêntico aos outros botões */}
+              {/* NOVAS ABAS ADICIONADAS: Seguindo o padrão de estilo idêntico aos outros botões */}
               <a 
                 className={`cabecalho-txt-it ${telaAtiva === 'produtos' ? 'ativo' : ''}`} 
                 href="#produtos" 

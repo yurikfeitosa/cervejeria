@@ -6,7 +6,7 @@ export default function Sobre() {
       {/* Imagem de partículas no fundo */}
       <img className="particulas" src="/imagens/particulas.png" alt="particulas" />
 
-      {/* 💛 Seção Pilsen (Yellow) */}
+      {/* Seção Pilsen (Yellow) */}
       <section className="yellow">
         <img className="sol-so" src="/imagens/sol.png" alt="sol" />
         <p className="yellow-txt-tt">PILSEN (SOL DA TARDE)</p>
@@ -21,7 +21,7 @@ export default function Sobre() {
         <img className="yellow-img" src="/imagens/MARS BEER SOL DA TARDE.png" alt="soldatarde" /> 
       </section>
 
-      {/* 💚 Seção Tripel (Green) */}
+      {/* Seção Tripel (Green) */}
       <section className="green"> 
         <p className="green-txt-tt">TRIPEL (FLOREST)</p>
         <p className="green-txt">
@@ -37,7 +37,7 @@ export default function Sobre() {
         <img className="onda-fundo" src="/imagens/fundo verde.png" alt="fundo verde" />
       </section>
 
-      {/* 💙 Seção Weizenbier (Blue) */}
+      {/* Seção Weizenbier (Blue) */}
       <section className="blue">
         <p className="blue-txt-tt">WEIZENBIER (BLUE DARK)</p>
         <p className="blue-txt">
@@ -48,7 +48,7 @@ export default function Sobre() {
           A bebida é refrescante, com teor alcóolico moderado (em torno de 5% a 6%).
         </p>
         <img className="blue-img" src="/imagens/2 DARKBLUE.png" alt="blue DARK" /> 
-        {/* 🌟 A onda voltou com a classe corrigida */}
+        {/* A onda voltou com a classe corrigida */}
         <img className="onda-fundo" src="/imagens/fundo azul.png" alt="fundo azul" />
       </section>
 

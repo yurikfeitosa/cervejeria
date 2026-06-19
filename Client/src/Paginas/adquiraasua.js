@@ -7,9 +7,9 @@ export default function AdquiraASua() {
   
   // Estados para controlar o item selecionado no momento antes de adicionar ao carrinho
   const [produtoId, setProdutoId] = useState('');
-  const [quantidadeItem, setQuantidadeItem] = useState(0); // 🌟 ALTERADO: Começa em 0
+  const [quantidadeItem, setQuantidadeItem] = useState(0);
   
-  // 🛒 Estado do carrinho (Array de itens adicionados)
+  // Estado do carrinho (Array de itens adicionados)
   const [carrinho, setCarrinho] = useState([]);
 
   // CARGA DINÂMICA: Busca o catálogo de cervejas
@@ -33,7 +33,7 @@ export default function AdquiraASua() {
   const adicionarAoCarrinho = () => {
     if (!produtoId) return;
 
-    // 🌟 VALIDAÇÃO: Garante que não adicione com quantidade 0 ou negativa
+    // VALIDAÇÃO: Garante que não adicione com quantidade 0
     if (Number(quantidadeItem) <= 0) {
       alert('Por favor, insira uma quantidade maior que 0 para adicionar ao carrinho!');
       return;

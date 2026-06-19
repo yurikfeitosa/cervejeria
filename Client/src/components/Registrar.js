@@ -23,12 +23,12 @@ export default function Registrar({ onRegistrar, onIrParaLogin }) {
               style={{ height: '60px', margin: '0 auto 10px auto', display: 'block' }} 
             />
             
-            {/* 🌟 ALTERADO: Título para criação de conta do cliente */}
+            {/* ALTERADO: Título para criação de conta do cliente */}
             <h2 className="titulo" style={{ fontSize: '1.5em', letterSpacing: 'normal' }}>
               Criar Conta
             </h2>
 
-            {/* 🌟 Label alterado de Corporativo para pessoal */}
+            {/* Label alterado de Corporativo para pessoal */}
             <label htmlFor="email">E-mail</label>
             <div className="input">
               <i className="fa-solid fa-envelope"></i>
@@ -65,7 +65,7 @@ export default function Registrar({ onRegistrar, onIrParaLogin }) {
               />
             </div>
 
-            {/* 🌟 ALTERADO: Texto do Botão Principal */}
+            {/* ALTERADO: Texto do Botão Principal */}
             <div id="btn">
               <button type="submit">Cadastrar Conta</button>
             </div>
