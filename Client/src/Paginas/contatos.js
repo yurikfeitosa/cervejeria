@@ -39,8 +39,8 @@ export default function Contatos() {
 
       {/* Links de Texto */}
       <section className="text-cont">
-         <a className="instawpp" href="https://www.instagram.com/seuinstagram/" target="_blank" rel="noreferrer">INSTAGRAM<br /><br /></a> 
-         <a className="instawpp" href="https://whatsa.me/5561seucelular" target="_blank" rel="noreferrer">WHATSAPP</a> 
+         <a className="instawpp" href="https://www.instagram.com/seuinstagram/" target="_blank" rel="noreferrer"><br /><br /></a> 
+         <a className="instawpp" href="https://whatsa.me/5561seucelular" target="_blank" rel="noreferrer"></a> 
       </section>
 
       <hr />
