@@ -19,4 +19,5 @@ const app = initializeApp(firebaseConfig);
 
 // Exporta as instâncias prontas para uso nos componentes
 export const db = getFirestore(app);
+>>>>>>> 5218563f7dcd7c9ce44518cef0a4e5493f9d81e7
 export const auth = getAuth(app); // 🌟 Exportado para o seu App.js usar no login
