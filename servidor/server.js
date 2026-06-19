@@ -255,6 +255,81 @@ app.delete('/api/pedidos/:id', async (req, res) => {
   }
 });
 
+// =======================================================
+// 🍺 CRUD DE PRODUTOS (CATÁLOGO DE CERVEJAS) NO FIRESTORE
+// =======================================================
+
+// 1. CREATE: Recebe a cerveja do React e salva na coleção 'produtos'
+app.post('/api/produtos', async (req, res) => {
+  try {
+    const { nomeProduto, preco } = req.body;
+    
+    // Comando do Firestore para adicionar um novo documento
+    const docRef = await db.collection('produtos').add({
+      nomeProduto: nomeProduto,
+      preco: Number(preco)
+    });
+
+    return res.status(201).json({ mensagem: 'Cerveja cadastrada com sucesso', id: docRef.id });
+  } catch (error) {
+    console.error("Erro ao salvar produto:", error);
+    return res.status(500).json({ erro: 'Falha ao salvar produto no Firestore.' });
+  }
+});
+
+// 2. READ: Busca todas as cervejas do Firestore e manda pro React
+app.get('/api/produtos', async (req, res) => {
+  try {
+    // Comando do Firestore para ler a coleção inteira
+    const snapshot = await db.collection('produtos').get();
+    
+    // Monta a lista com os IDs
+    const catalogo = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    return res.json(catalogo);
+  } catch (error) {
+    console.error("Erro ao listar produtos:", error);
+    return res.status(500).json({ erro: 'Falha ao buscar produtos.' });
+  }
+});
+
+// 3. UPDATE: Recebe os dados alterados do React e atualiza no Firestore
+app.put('/api/produtos/:id', async (req, res) => {
+  try {
+    const idProduto = req.params.id;
+    const { nomeProduto, preco } = req.body;
+
+    // Comando do Firestore para atualizar um documento específico pelo ID
+    await db.collection('produtos').doc(idProduto).update({
+      nomeProduto: nomeProduto,
+      preco: Number(preco)
+    });
+
+    return res.json({ mensagem: 'Cerveja atualizada com sucesso!' });
+  } catch (error) {
+    console.error("Erro ao atualizar produto:", error);
+    return res.status(500).json({ erro: 'Falha ao atualizar produto.' });
+  }
+});
+
+// 4. DELETE: Exclui a cerveja do Firestore
+app.delete('/api/produtos/:id', async (req, res) => {
+  try {
+    const idProduto = req.params.id;
+
+    // Comando do Firestore para deletar o documento pelo ID
+    await db.collection('produtos').doc(idProduto).delete();
+
+    return res.json({ mensagem: 'Cerveja removida com sucesso!' });
+  } catch (error) {
+    console.error("Erro ao deletar produto:", error);
+    return res.status(500).json({ erro: 'Falha ao deletar produto.' });
+  }
+});
+
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
