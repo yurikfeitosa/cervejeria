@@ -1,0 +1,36 @@
+name: CI Mars Cervejaria
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./Client # Garante que os comandos rodem na pasta do React
+
+    strategy:
+      matrix:
+        node-version: [18.x] # Use a versão do Node compatível com o seu projeto
+
+    steps:
+    - name: Fazer o checkout do código
+      uses: actions/checkout@v3
+
+    - name: Configurar o Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './Client/package-lock.json' # Aponta para o lockfile correto
+
+    - name: Instalar dependências (Front-end)
+      run: npm install
+
+    - name: Executar testes automatizados (Jest)
+      run: npm test -- --watchAll=false # Roda os testes e encerra (sem ficar esperando)

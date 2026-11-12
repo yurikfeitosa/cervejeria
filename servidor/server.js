@@ -26,7 +26,7 @@ const inicializarCatalogoCervejas = async () => {
       return;
     }
 
-    console.log(' Alimentando o Firestore com o catálogo inicial de cervejas...');
+    console.log('Alimentando o Firestore com o catálogo inicial de cervejas...');
     const batch = db.batch();
 
     const cervejasNoProjeto = [
@@ -43,34 +43,77 @@ const inicializarCatalogoCervejas = async () => {
     await batch.commit();
     console.log('✅ Catálogo de cervejas salvo com sucesso no Firestore!');
   } catch (error) {
-    console.error('❌ Erro ao inicializar catálogo:', error);
+    console.error('❌ Erro ao inicializar catálogo:', error.message);
   }
 };
 
+// Funções Auxiliares (Refatoração para diminuir a complexidade da rota GET /pedidos)
+const buscarClientesEProdutos = async () => {
+  const [clientesSnapshot, produtosSnapshot] = await Promise.all([
+    db.collection('clientes').get(),
+    db.collection('produtos').get()
+  ]);
 
-// ROTA GET: Buscar a lista de produtos (cervejas) para o Select do Front-end
+  const clientesLista = clientesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const produtosLista = produtosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return { clientesLista, produtosLista };
+};
 
-app.get('/api/produtos', async (req, res) => {
-  try {
-    const produtosSnapshot = await db.collection('produtos').get();
-    const produtos = produtosSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    return res.json(produtos);
-  } catch (error) {
-    return res.status(500).json({ erro: 'Erro ao buscar catálogo de produtos.' });
+const buscarPedidosFiltrados = async (email, clientesLista) => {
+  let pedidosRef = db.collection('pedidos');
+  
+  if (email) {
+    const clienteEncontrado = clientesLista.find(c => c.email === email);
+    if (clienteEncontrado) {
+      const snapshot = await pedidosRef.where('clienteId', '==', clienteEncontrado.id).get();
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+    return []; // E-mail não encontrado
   }
-});
+  
+  const snapshot = await pedidosRef.get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
 
+const processarRelatorio = (pedidosLista, clientesLista, produtosLista) => {
+  return pedidosLista.map(pedido => {
+    const clienteInfo = clientesLista.find(c => c.id === pedido.clienteId) || { nome: 'Não informado', email: '-' };
+    
+    let nomesCervejas = [];
+    let valorTotalPedido = 0;
 
-// ROTA POST ATUALIZADA: Grava o Pedido associando o Vendedor responsável
+    if (Array.isArray(pedido.itens)) {
+      pedido.itens.forEach(item => {
+        const produtoInfo = produtosLista.find(p => p.id === item.produtoId);
+        if (produtoInfo) {
+          nomesCervejas.push(`${item.quantidade}x ${produtoInfo.nomeProduto}`);
+          valorTotalPedido += (Number(produtoInfo.preco) * item.quantidade);
+        }
+      });
+    }
 
+    return {
+      id: pedido.id,
+      cliente: clienteInfo.nome,
+      email: clienteInfo.email,
+      vendedor: pedido.vendedor || "Não informado",
+      produto: nomesCervejas.join(' | ') || "Nenhum item selecionado",
+      preco: valorTotalPedido,
+      status: pedido.status || 'Pendente',
+      data: pedido.dataPedido,
+      itensBrutos: pedido.itens || [] 
+    };
+  });
+};
+
+// CRUD DE PEDIDOS
+
+// ROTA POST: Grava o Pedido
 app.post('/api/pedidos', async (req, res) => {
   try {
-    const { cliente, email, itens, vendedor } = req.body; // 🌟 Recebe 'itens' em vez de um único produtoId
+    const { cliente, email, itens, vendedor } = req.body;
 
-    if (!cliente || !email || !itens || !Array.isArray(itens) || itens.length === 0) {
+    if (!cliente || !email || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).json({ erro: 'Dados incompletos ou carrinho vazio!' });
     }
 
@@ -78,14 +121,12 @@ app.post('/api/pedidos', async (req, res) => {
     const pedidoRef = db.collection('pedidos').doc();
     const batch = db.batch();
 
-    // Salva o cliente
     batch.set(clienteRef, { nome: cliente, email: email });
 
-    // Estrutura o documento do pedido contendo a lista completa de compras
     batch.set(pedidoRef, {
       clienteId: clienteRef.id,
       vendedor: vendedor || "Venda Direta Site",
-      itens: itens, // Guarda o Array [{ produtoId, quantidade }, ...]
+      itens: itens, 
       status: "Pendente",
       dataPedido: new Date().toISOString()
     });
@@ -93,92 +134,37 @@ app.post('/api/pedidos', async (req, res) => {
     await batch.commit();
     return res.status(201).json({ mensagem: 'Pedido multilista gravado com sucesso!' });
   } catch (error) {
-    console.error(error);
+    console.error('Erro no POST pedidos:', error.message);
     return res.status(500).json({ erro: 'Erro interno ao salvar pedido.' });
   }
 });
 
-// ROTA GET: Relatório Gerencial (Mantém o mesmo JOIN inteligente anterior)
-
+// ROTA GET: Relatório Gerencial (Refatorado para baixa complexidade)
 app.get('/api/pedidos', async (req, res) => {
   try {
-    const { email } = req.query; // Captura o e-mail enviado pelo front-end
+    const { email } = req.query;
 
-    // Busca as coleções básicas de clientes e produtos para o JOIN
-    const [clientesSnapshot, produtosSnapshot] = await Promise.all([
-      db.collection('clientes').get(),
-      db.collection('produtos').get()
-    ]);
-
-    const clientesLista = clientesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const produtosLista = produtosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    // DEFINIÇÃO DA BUSCA DE PEDIDOS COM FILTRO DINÂMICO
-    let pedidosRef = db.collection('pedidos');
-    let pedidosSnapshot;
-
-    if (email) {
-      // 1. Acha o documento do cliente que possui esse e-mail
-      const clienteEncontrado = clientesLista.find(c => c.email === email);
-      
-      if (clienteEncontrado) {
-        // 2. Filtra no Firestore trazendo APENAS os pedidos criados por este clienteId
-        pedidosSnapshot = await pedidosRef.where('clienteId', '==', clienteEncontrado.id).get();
-      } else {
-        // Se o e-mail não existe no cadastro de clientes, retorna uma lista vazia direto
-        return res.json([]);
-      }
-    } else {
-      // Se não passar e-mail (caso queira uma visão geral master), traz tudo
-      pedidosSnapshot = await pedidosRef.get();
+    const { clientesLista, produtosLista } = await buscarClientesEProdutos();
+    const pedidosLista = await buscarPedidosFiltrados(email, clientesLista);
+    
+    if (pedidosLista.length === 0) {
+       return res.json([]);
     }
 
-    const pedidosLista = pedidosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const relatorioCompleto = [];
-
-    // Executa o JOIN normal (porém agora apenas com a lista filtrada)
-    pedidosLista.forEach(pedido => {
-      const clienteInfo = clientesLista.find(c => c.id === pedido.clienteId) || { nome: 'Não informado', email: '-' };
-      
-      let nomesCervejas = [];
-      let valorTotalPedido = 0;
-
-      if (pedido.itens && Array.isArray(pedido.itens)) {
-        pedido.itens.forEach(item => {
-          const produtoInfo = produtosLista.find(p => p.id === item.produtoId);
-          if (produtoInfo) {
-            nomesCervejas.push(`${item.quantidade}x ${produtoInfo.nomeProduto}`);
-            valorTotalPedido += (Number(produtoInfo.preco) * item.quantidade);
-          }
-        });
-      }
-
-      relatorioCompleto.push({
-        id: pedido.id,
-        cliente: clienteInfo.nome,
-        email: clienteInfo.email,
-        vendedor: pedido.vendedor || "Não informado",
-        produto: nomesCervejas.join(' | ') || "Nenhum item selecionado",
-        preco: valorTotalPedido,
-        status: pedido.status || 'Pendente',
-        data: pedido.dataPedido,
-        itensBrutos: pedido.itens || [] 
-      });
-    });
-
+    const relatorioCompleto = processarRelatorio(pedidosLista, clientesLista, produtosLista);
     return res.json(relatorioCompleto);
+
   } catch (error) {
-    console.error("Erro ao gerar relatório filtrado:", error);
-    return res.status(500).json({ erro: 'Erro ao gerar o relatório.' });
+    console.error("Erro ao gerar relatório filtrado:", error.message);
+    return res.status(500).json({ erro: 'Erro interno ao gerar o relatório.' });
   }
 });
 
-// ROTA PUT: Atualiza os dados do cliente (Edição) ou o Status do Pedido
-
+// ROTA PUT: Atualiza o Pedido
 app.put('/api/pedidos/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { clienteNome, clienteEmail, novosItens, status } = req.body; // 🌟 Recebe 'novosItens' do front-end
+    const { clienteNome, clienteEmail, novosItens, status } = req.body;
 
     const pedidoRef = db.collection('pedidos').doc(id);
     const pedidoDoc = await pedidoRef.get();
@@ -190,7 +176,6 @@ app.put('/api/pedidos/:id', async (req, res) => {
     const pedidoDados = pedidoDoc.data();
     const batch = db.batch();
 
-    // 1. Atualização dos campos de texto do cliente
     if (clienteNome || clienteEmail) {
       const clienteRef = db.collection('clientes').doc(pedidoDados.clienteId);
       const dadosAtualizacaoCliente = {};
@@ -200,26 +185,23 @@ app.put('/api/pedidos/:id', async (req, res) => {
       batch.update(clienteRef, dadosAtualizacaoCliente);
     }
 
-    // 2. Atualização da cerveja selecionada e quantidade dentro do Pedido
-    if (novosItens && Array.isArray(novosItens)) {
+    if (Array.isArray(novosItens)) {
       batch.update(pedidoRef, { itens: novosItens });
     }
 
-    // 3. Atualização de status
     if (status) {
       batch.update(pedidoRef, { status: status });
     }
 
     await batch.commit();
-    return res.json({ mensagem: 'Registro totalmente atualizado no Firestore!' });
+    return res.json({ mensagem: 'Registro atualizado no Firestore!' });
   } catch (error) {
-    console.error('Erro no PUT pedidos:', error);
+    console.error('Erro no PUT pedidos:', error.message);
     return res.status(500).json({ erro: 'Erro interno ao atualizar dados.' });
   }
 });
 
-// ROTA DELETE: Remove o Pedido e limpa o Cliente vinculado no Firestore
-
+// ROTA DELETE: Remove o Pedido
 app.delete('/api/pedidos/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -234,98 +216,88 @@ app.delete('/api/pedidos/:id', async (req, res) => {
     const { clienteId } = pedidoDoc.data();
     const batch = db.batch();
 
-    // Deleta o documento do pedido
     batch.delete(pedidoRef);
 
-    // Remove também o cliente correspondente para não deixar dados órfãos
     if (clienteId) {
       const clienteRef = db.collection('clientes').doc(clienteId);
       batch.delete(clienteRef);
     }
 
     await batch.commit();
-    return res.json({ mensagem: 'Pedido e dependências removidos em lote!' });
+    return res.json({ mensagem: 'Pedido e dependências removidos!' });
   } catch (error) {
-    console.error('Erro no DELETE pedidos:', error);
+    console.error('Erro no DELETE pedidos:', error.message);
     return res.status(500).json({ erro: 'Erro interno ao remover dados.' });
   }
 });
 
-// CRUD DE PRODUTOS (CATÁLOGO DE CERVEJAS) NO FIRESTORE
+// CRUD DE PRODUTOS
 
-// 1. CREATE: Recebe a cerveja do React e salva na coleção 'produtos'
+// ROTA POST: Salvar Produto
 app.post('/api/produtos', async (req, res) => {
   try {
     const { nomeProduto, preco } = req.body;
     
-    // Comando do Firestore para adicionar um novo documento
+    if (!nomeProduto || preco == null) {
+        return res.status(400).json({ erro: 'Dados do produto inválidos.' });
+    }
+
     const docRef = await db.collection('produtos').add({
       nomeProduto: nomeProduto,
       preco: Number(preco)
     });
 
-    return res.status(201).json({ mensagem: 'Cerveja cadastrada com sucesso', id: docRef.id });
+    return res.status(201).json({ mensagem: 'Cerveja cadastrada', id: docRef.id });
   } catch (error) {
-    console.error("Erro ao salvar produto:", error);
-    return res.status(500).json({ erro: 'Falha ao salvar produto no Firestore.' });
+    console.error("Erro ao salvar produto:", error.message);
+    return res.status(500).json({ erro: 'Falha interna ao salvar produto.' });
   }
 });
 
-// 2. READ: Busca todas as cervejas do Firestore e manda pro React
+// ROTA GET: Listar Produtos
 app.get('/api/produtos', async (req, res) => {
   try {
-    // Comando do Firestore para ler a coleção inteira
     const snapshot = await db.collection('produtos').get();
-    
-    // Monta a lista com os IDs
-    const catalogo = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
+    const catalogo = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return res.json(catalogo);
   } catch (error) {
-    console.error("Erro ao listar produtos:", error);
-    return res.status(500).json({ erro: 'Falha ao buscar produtos.' });
+    console.error("Erro ao listar produtos:", error.message);
+    return res.status(500).json({ erro: 'Falha interna ao buscar produtos.' });
   }
 });
 
-// 3. UPDATE: Recebe os dados alterados do React e atualiza no Firestore
+// ROTA PUT: Atualizar Produto
 app.put('/api/produtos/:id', async (req, res) => {
   try {
     const idProduto = req.params.id;
     const { nomeProduto, preco } = req.body;
 
-    // Comando do Firestore para atualizar um documento específico pelo ID
     await db.collection('produtos').doc(idProduto).update({
       nomeProduto: nomeProduto,
       preco: Number(preco)
     });
 
-    return res.json({ mensagem: 'Cerveja atualizada com sucesso!' });
+    return res.json({ mensagem: 'Cerveja atualizada!' });
   } catch (error) {
-    console.error("Erro ao atualizar produto:", error);
-    return res.status(500).json({ erro: 'Falha ao atualizar produto.' });
+    console.error("Erro ao atualizar produto:", error.message);
+    return res.status(500).json({ erro: 'Falha interna ao atualizar produto.' });
   }
 });
 
-// 4. DELETE: Exclui a cerveja do Firestore
+// ROTA DELETE: Remover Produto
 app.delete('/api/produtos/:id', async (req, res) => {
   try {
     const idProduto = req.params.id;
-
-    // Comando do Firestore para deletar o documento pelo ID
     await db.collection('produtos').doc(idProduto).delete();
-
-    return res.json({ mensagem: 'Cerveja removida com sucesso!' });
+    return res.json({ mensagem: 'Cerveja removida!' });
   } catch (error) {
-    console.error("Erro ao deletar produto:", error);
-    return res.status(500).json({ erro: 'Falha ao deletar produto.' });
+    console.error("Erro ao deletar produto:", error.message);
+    return res.status(500).json({ erro: 'Falha interna ao deletar produto.' });
   }
 });
 
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
-  inicializarCatalogoCervejas(); //  Roda a semente assim que o servidor liga
+  inicializarCatalogoCervejas(); 
 });
